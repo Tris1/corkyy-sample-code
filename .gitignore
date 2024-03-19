@@ -1,0 +1,6 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/ToDoList-Backend/ToDoListAPI/.vs
+/ToDoList-Backend/ToDoListAPI/obj
