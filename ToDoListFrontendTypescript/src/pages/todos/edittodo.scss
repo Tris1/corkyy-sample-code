@@ -1,0 +1,6 @@
+@import '../../mixins';
+
+.edittodo{
+  @include main-style(); 
+  
+}

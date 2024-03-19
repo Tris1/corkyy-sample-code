@@ -1,0 +1,6 @@
+@import '../../mixins';
+
+.addtodo{
+  @include main-style(); 
+  
+}
