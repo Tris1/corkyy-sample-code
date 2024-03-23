@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ToDoListAPI.Context;
-using ToDoListAPI.Entities;
-using ToDoListAPI.DTOs;
+﻿using Microsoft.AspNetCore.Mvc;
+using ToDoListAPI.Models;
+using ToDoListAPI.Services;
 
 namespace ToDoListAPI.Controllers
 {
@@ -11,62 +8,48 @@ namespace ToDoListAPI.Controllers
 	[ApiController]
 	public class ToDoNotesController : ControllerBase
 	{
-		private readonly ApplicationDbContext _context;
+		private readonly ITodoNoteService _todoNoteService;
 
-		public ToDoNotesController(ApplicationDbContext context)
+		public ToDoNotesController(ITodoNoteService todoNoteService)
 		{
-			_context = context;
+			_todoNoteService = todoNoteService;
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> CreateToDoNote([FromBody] ToDoDTO dto)
+		public async Task<IActionResult> CreateToDoNote([FromBody] TodoNoteModel tnm)
 		{
-			var toDoNote = new ToDoNoteEntity()
-			{
-				TodoText = dto.TodoText
-			};
-			await _context.ToDoNotes.AddAsync(toDoNote);
-			await _context.SaveChangesAsync();
+			await _todoNoteService.Add(tnm);
 
 			return Ok("Product saved successfully");
 		}
 
 		[HttpGet]
-		public async Task<ActionResult<List<ToDoNoteEntity>>> GetAllToDoNotes() 
+		public ActionResult<List<TodoNoteModel>> GetAllToDoNotes() 
 		{
-			var toDoNotes = await _context.ToDoNotes.OrderByDescending(todo => todo.Updated).ToListAsync();
-			return Ok(toDoNotes);
+			var notes = _todoNoteService.GetAll();
+			return Ok(notes);
 		}
 
 		[HttpGet]
 		[Route("{id}")]
-		public async Task<ActionResult<ToDoNoteEntity>> GetToDoById([FromRoute] long id) 
+		public ActionResult<TodoNoteModel> GetToDoById([FromRoute] long id) 
 		{
-			var toDoNote = await _context.ToDoNotes.FirstOrDefaultAsync(x => x.Id == id);
+			var toDoNote = _todoNoteService.GetById((int)id);
 
 			if (toDoNote is null) 
-			{
 				return NotFound("ToDo Note Not Found");
-			}
 
 			return Ok(toDoNote);
 		}
 
 		[HttpPut]
 		[Route("{id}")]
-		public async Task<IActionResult> UpdateToDoNote([FromRoute] long id, [FromBody] ToDoDTO dto) 
+		public async Task<IActionResult> UpdateToDoNote([FromRoute] long id, [FromBody] TodoNoteModel tnm) 
 		{
-			var toDoNote = await _context.ToDoNotes.FirstOrDefaultAsync(x => x.Id == id);
+			var result = await _todoNoteService.Update((int)id, tnm);
 
-			if (toDoNote is null)
-			{
-				return NotFound("ToDo Note Not Found");
-			}
-
-			toDoNote.TodoText = dto.TodoText;
-			toDoNote.Updated = DateTime.Now;
-
-			await _context.SaveChangesAsync();
+			if (result is null)
+				return NotFound("Unable to update ToDo!");
 			return Ok("ToDo Updated!");
 		}
 
@@ -74,15 +57,10 @@ namespace ToDoListAPI.Controllers
 		[Route("{id}")]
 		public async Task<IActionResult> DeleteToDo([FromRoute] long id) 
 		{
-			var toDoNote = await _context.ToDoNotes.FirstOrDefaultAsync(x => x.Id == id);
+			var toDoNote = await _todoNoteService.DeleteById((int)id);
 
-			if (toDoNote is null)
-			{
+			if (toDoNote == -1)
 				return NotFound("ToDo Note Not Found");
-			}
-
-			_context.ToDoNotes.Remove(toDoNote);
-			await _context.SaveChangesAsync();
 
 			return Ok("ToDo Deleted!");
 		}
